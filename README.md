@@ -8,7 +8,7 @@ wall, check whether the couch fits, annotate it for a contractor, export a true-
 
 No backend, no account, no upload — everything stays in your browser.
 
-**[Open the app →](https://thijsjls.github.io/floorplanner/)**
+**[Open the app →](https://thijsjls.github.io/klootviolen/)**
 
 ---
 
@@ -66,7 +66,7 @@ rotation as editable millimetre fields. The mouse is never the only way to get a
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173/floorplanner/
+npm run dev      # http://localhost:5173/klootviolen/
 npm test         # geometry, calibration, snapping, undo
 npm run build
 ```
