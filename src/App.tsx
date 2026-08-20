@@ -30,7 +30,7 @@ export default function App() {
     restored.current = true
     loadAutosave().then((saved) => {
       if (!saved) return
-      const has = saved.doc.walls.length || saved.doc.items.length || saved.doc.notes.length || saved.image
+      const has = saved.doc.walls.length || saved.doc.items.length || saved.doc.notes.length || saved.doc.erasures.length || saved.image
       if (!has) return
       if (!confirm('Restore your last session?')) return
       dispatch({ t: 'load', doc: saved.doc, image: saved.image })
@@ -60,6 +60,7 @@ export default function App() {
       } else if (e.key === 'v') setTool({ t: 'select' })
       else if (e.key === 'w') setTool({ t: 'wall' })
       else if (e.key === 'n') setTool({ t: 'note' })
+      else if (e.key === 'e') setTool({ t: 'erase' })
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -125,6 +126,7 @@ export default function App() {
           <button className={tool.t === 'select' ? 'on' : ''} onClick={() => setTool({ t: 'select' })}>Select <kbd>V</kbd></button>
           <button className={tool.t === 'wall' ? 'on' : ''} onClick={() => setTool({ t: 'wall' })}>Wall <kbd>W</kbd></button>
           <button className={tool.t === 'note' ? 'on' : ''} onClick={() => setTool({ t: 'note' })}>Note <kbd>N</kbd></button>
+          <button className={tool.t === 'erase' ? 'on' : ''} onClick={() => setTool({ t: 'erase' })}>Erase <kbd>E</kbd></button>
         </div>
 
         <div className="group">
@@ -176,6 +178,7 @@ export default function App() {
         {tool.t === 'wall' && 'Click to place corners. Type an exact length and press Enter. Alt disables snapping, Esc ends the chain.'}
         {tool.t === 'place' && 'Click to place the object.'}
         {tool.t === 'note' && 'Click to drop a sticky note.'}
+        {tool.t === 'erase' && 'Drag a box over anything on the original plan you want gone. Your own walls and objects stay visible.'}
         {tool.t === 'select' && 'Drag to pan, scroll to zoom. Double-click a note to edit it.'}
       </footer>
 

@@ -155,6 +155,27 @@ describe('walls', () => {
   })
 })
 
+describe('erasures', () => {
+  const withErase = () => {
+    let s = reducer(initialState(), { t: 'calibrate', mmPerPx: 10 })
+    return reducer(s, { t: 'addErase', erase: { id: 'e1', x: 100, y: 200, w: 300, h: 400 } })
+  }
+
+  it('rescales with the rest of the document when the scale is corrected', () => {
+    // An erase patch covers a specific part of the background image. If it did not
+    // rescale it would drift off whatever it was hiding.
+    const s = reducer(withErase(), { t: 'calibrate', mmPerPx: 20 })
+    expect(s.doc.erasures[0]).toEqual({ id: 'e1', x: 200, y: 400, w: 600, h: 800 })
+  })
+
+  it('can be deleted and undone', () => {
+    let s = reducer(withErase(), { t: 'delete', ids: ['e1'] })
+    expect(s.doc.erasures).toHaveLength(0)
+    s = reducer(s, { t: 'undo' })
+    expect(s.doc.erasures).toHaveLength(1)
+  })
+})
+
 describe('undo / redo', () => {
   const withWalls = (n: number): State => {
     let s = initialState()

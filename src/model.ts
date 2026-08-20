@@ -4,6 +4,8 @@ export type Shape = 'rect' | 'ellipse'
 
 export type Wall = { id: string; a: Pt; b: Pt; thickness: number }
 export type Item = { id: string; kind: string; x: number; y: number; w: number; h: number; rot: number }
+/** An opaque patch covering part of the background plan. Top-left anchored, mm. */
+export type Erase = { id: string; x: number; y: number; w: number; h: number }
 export type Note = { id: string; x: number; y: number; w: number; h: number; text: string; color: string; anchor?: Pt }
 export type ImageRef = { dataUrl: string; wPx: number; hPx: number }
 
@@ -16,6 +18,7 @@ export type Doc = {
   walls: Wall[]
   items: Item[]
   notes: Note[]
+  erasures: Erase[]
 }
 
 export const emptyDoc = (): Doc => ({
@@ -26,6 +29,7 @@ export const emptyDoc = (): Doc => ({
   walls: [],
   items: [],
   notes: [],
+  erasures: [],
 })
 
 export const DEFAULT_WALL_MM = 100
@@ -118,9 +122,11 @@ export type Action =
   | { t: 'addWall'; wall: Wall }
   | { t: 'addItem'; item: Item }
   | { t: 'addNote'; note: Note }
+  | { t: 'addErase'; erase: Erase }
   | { t: 'patchWall'; id: string; patch: Partial<Wall>; live?: boolean }
   | { t: 'patchItem'; id: string; patch: Partial<Item>; live?: boolean }
   | { t: 'patchNote'; id: string; patch: Partial<Note>; live?: boolean }
+  | { t: 'patchErase'; id: string; patch: Partial<Erase>; live?: boolean }
   | { t: 'moveEndpoint'; from: Pt; to: Pt; live?: boolean }
   | { t: 'delete'; ids: string[] }
   | { t: 'select'; ids: string[] }
@@ -165,6 +171,7 @@ export const reducer = (s: State, a: Action): State => {
         walls: s.doc.walls.map((w) => ({ ...w, a: sp(w.a), b: sp(w.b), thickness: w.thickness })),
         items: s.doc.items.map((i) => ({ ...i, x: i.x * k, y: i.y * k, w: i.w, h: i.h })),
         notes: s.doc.notes.map((n) => ({ ...n, x: n.x * k, y: n.y * k, anchor: n.anchor && sp(n.anchor) })),
+        erasures: s.doc.erasures.map((e) => ({ ...e, x: e.x * k, y: e.y * k, w: e.w * k, h: e.h * k })),
       })
     }
 
@@ -177,6 +184,8 @@ export const reducer = (s: State, a: Action): State => {
       return { ...push(s, { ...s.doc, items: [...s.doc.items, a.item] }), selection: [a.item.id] }
     case 'addNote':
       return { ...push(s, { ...s.doc, notes: [...s.doc.notes, a.note] }), selection: [a.note.id] }
+    case 'addErase':
+      return { ...push(s, { ...s.doc, erasures: [...s.doc.erasures, a.erase] }), selection: [a.erase.id] }
 
     case 'patchWall':
       return write(s, { ...s.doc, walls: patch(s.doc.walls, a.id, a.patch) }, a.live)
@@ -184,6 +193,8 @@ export const reducer = (s: State, a: Action): State => {
       return write(s, { ...s.doc, items: patch(s.doc.items, a.id, a.patch) }, a.live)
     case 'patchNote':
       return write(s, { ...s.doc, notes: patch(s.doc.notes, a.id, a.patch) }, a.live)
+    case 'patchErase':
+      return write(s, { ...s.doc, erasures: patch(s.doc.erasures, a.id, a.patch) }, a.live)
 
     case 'moveEndpoint': {
       // Walls meeting at a joint move together, so corners never come apart.
@@ -210,6 +221,7 @@ export const reducer = (s: State, a: Action): State => {
           walls: s.doc.walls.filter((w) => !gone.has(w.id)),
           items: s.doc.items.filter((i) => !gone.has(i.id)),
           notes: s.doc.notes.filter((n) => !gone.has(n.id)),
+          erasures: s.doc.erasures.filter((e) => !gone.has(e.id)),
         }),
         selection: [],
       }

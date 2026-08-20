@@ -23,6 +23,7 @@ import {
   NOTE_W,
   NOTE_COLORS,
   uid,
+  type Erase,
   type Action,
   type Item,
   type Note,
@@ -33,6 +34,7 @@ export type Tool =
   | { t: 'select' }
   | { t: 'wall' }
   | { t: 'note' }
+  | { t: 'erase' }
   | { t: 'calibrate' }
   | { t: 'place'; kind: string }
 
@@ -44,9 +46,19 @@ type Drag =
   | { k: 'endpoint'; at: Pt }
   | { k: 'move-note'; id: string; grab: Pt }
   | { k: 'note-anchor'; id: string }
+  | { k: 'erase'; a: Pt }
+  | { k: 'move-erase'; id: string; grab: Pt }
   | { k: 'calibrate' }
 
 const MIN_ITEM_MM = 50
+
+/** Two dragged corners -> a positive-size rect. */
+const rectOf = (d: { a: Pt; b: Pt }): Omit<Erase, 'id'> => ({
+  x: Math.min(d.a.x, d.b.x),
+  y: Math.min(d.a.y, d.b.y),
+  w: Math.abs(d.b.x - d.a.x),
+  h: Math.abs(d.b.y - d.a.y),
+})
 
 type Props = {
   state: State
@@ -65,6 +77,7 @@ export default function Canvas({ state, dispatch, view, setView, tool, setTool, 
   const [cursor, setCursor] = useState<Pt | null>(null)
   const [pending, setPending] = useState<Pt | null>(null)
   const [cal, setCal] = useState<{ a: Pt; b: Pt } | null>(null)
+  const [box, setBox] = useState<{ a: Pt; b: Pt } | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [lengthInput, setLengthInput] = useState('')
   const drag = useRef<Drag | null>(null)
@@ -88,6 +101,7 @@ export default function Canvas({ state, dispatch, view, setView, tool, setTool, 
       if (e.key === 'Escape') {
         setPending(null)
         setCal(null)
+        setBox(null)
         setEditing(null)
       }
     }
@@ -152,6 +166,16 @@ export default function Canvas({ state, dispatch, view, setView, tool, setTool, 
         }
         return
 
+      case 'erase': {
+        // Raw, unsnapped: an erase patch is a purely visual cover-up, so it should
+        // sit exactly where you drew it rather than being yanked to a wall corner.
+        const raw = at(e)
+        setBox({ a: raw, b: raw })
+        drag.current = { k: 'erase', a: raw }
+        svgRef.current!.setPointerCapture(e.pointerId)
+        return
+      }
+
       case 'note':
         dispatch({
           t: 'addNote',
@@ -200,6 +224,14 @@ export default function Canvas({ state, dispatch, view, setView, tool, setTool, 
         setCal((c) => (c ? { ...c, b: at(e) } : c))
         return
 
+      case 'erase':
+        setBox((c) => (c ? { ...c, b: at(e) } : c))
+        return
+
+      case 'move-erase':
+        dispatch({ t: 'patchErase', id: d.id, patch: { x: p.x - d.grab.x, y: p.y - d.grab.y }, live: true })
+        return
+
       case 'endpoint':
         dispatch({ t: 'moveEndpoint', from: d.at, to: p, live: true })
         d.at = p
@@ -246,6 +278,13 @@ export default function Canvas({ state, dispatch, view, setView, tool, setTool, 
     const d = drag.current
     drag.current = null
     if (svgRef.current?.hasPointerCapture(e.pointerId)) svgRef.current.releasePointerCapture(e.pointerId)
+    if (d?.k === 'erase' && box) {
+      const r = rectOf(box)
+      // Ignore a stray click: an erase patch you can't see is one you can't delete.
+      if (r.w > 2 * view.scale && r.h > 2 * view.scale) dispatch({ t: 'addErase', erase: { id: uid(), ...r } })
+      setBox(null)
+      return
+    }
     if (d?.k === 'calibrate' && cal) {
       const measured = dist(cal.a, cal.b)
       if (measured > 0) onCalibrated(measured)
@@ -310,33 +349,50 @@ export default function Canvas({ state, dispatch, view, setView, tool, setTool, 
           />
         )}
 
-        {/* Walls */}
-        <g>
-          {doc.walls.map((w) => (
-            <g key={w.id}>
-              <line
-                x1={w.a.x} y1={w.a.y} x2={w.b.x} y2={w.b.y}
-                stroke={sel.has(w.id) ? '#e8590c' : '#2f3437'}
-                strokeWidth={w.thickness}
-                strokeLinecap="butt"
-              />
-              {/* Fat invisible stroke: makes thin walls clickable at any zoom. */}
-              <line
-                x1={w.a.x} y1={w.a.y} x2={w.b.x} y2={w.b.y}
-                stroke="transparent"
-                strokeWidth={Math.max(w.thickness, 12 * s)}
-                style={{ cursor: 'pointer' }}
-                onPointerDown={(e) => {
-                  e.stopPropagation()
-                  dispatch({ t: 'select', ids: [w.id] })
-                }}
-              />
-            </g>
+        {/* Nothing but the select tool may hit the scene — otherwise a wall,
+            object or note swallows the click you meant for the canvas. */}
+        <g style={{ pointerEvents: tool.t === 'select' ? undefined : 'none' }}>
+
+          {/* Erased patches of the background plan. Above the image, below the drawing. */}
+          {doc.erasures.map((r) => (
+            <rect key={r.id} x={r.x} y={r.y} width={r.w} height={r.h} fill="#fff"
+              stroke={sel.has(r.id) ? '#e8590c' : 'none'} strokeWidth={1.5 * s} strokeDasharray={`${5 * s} ${4 * s}`}
+              style={{ cursor: 'move' }}
+              onPointerDown={(e) => {
+                e.stopPropagation()
+                dispatch({ t: 'select', ids: [r.id] })
+                beginDrag(e, { k: 'move-erase', id: r.id, grab: { x: at(e).x - r.x, y: at(e).y - r.y } })
+              }}
+            />
           ))}
-          {/* Butt caps leave a notch at corners; patch each shared joint. */}
-          {jointsOf(doc).map((p, i) => (
-            <circle key={i} cx={p.x} cy={p.y} r={DEFAULT_WALL_MM / 2} fill="#2f3437" style={{ pointerEvents: 'none' }} />
-          ))}
+
+          {/* Walls */}
+          <g>
+            {doc.walls.map((w) => (
+              <g key={w.id}>
+                <line
+                  x1={w.a.x} y1={w.a.y} x2={w.b.x} y2={w.b.y}
+                  stroke={sel.has(w.id) ? '#e8590c' : '#2f3437'}
+                  strokeWidth={w.thickness}
+                  strokeLinecap="butt"
+                />
+                {/* Fat invisible stroke: makes thin walls clickable at any zoom. */}
+                <line
+                  x1={w.a.x} y1={w.a.y} x2={w.b.x} y2={w.b.y}
+                  stroke="transparent"
+                  strokeWidth={Math.max(w.thickness, 12 * s)}
+                  style={{ cursor: 'pointer' }}
+                  onPointerDown={(e) => {
+                    e.stopPropagation()
+                    dispatch({ t: 'select', ids: [w.id] })
+                  }}
+                />
+              </g>
+            ))}
+            {/* Butt caps leave a notch at corners; patch each shared joint. */}
+            {jointsOf(doc).map((p, i) => (
+              <circle key={i} cx={p.x} cy={p.y} r={DEFAULT_WALL_MM / 2} fill="#2f3437" style={{ pointerEvents: 'none' }} />
+            ))}
         </g>
 
         {/* Objects */}
@@ -361,11 +417,12 @@ export default function Canvas({ state, dispatch, view, setView, tool, setTool, 
             onEdit={() => setEditing(n.id)}
           />
         ))}
+        </g>
 
         {/* ---- overlay: handles, previews. Excluded from export. ---- */}
         <g id="overlay">
           {/* Wall endpoint handles */}
-          {(tool.t === 'wall' || doc.walls.some((w) => sel.has(w.id))) &&
+          {tool.t === 'select' && doc.walls.some((w) => sel.has(w.id)) &&
             endpointsOf(doc).map((p, i) => (
               <circle key={i} cx={p.x} cy={p.y} r={5 * s} fill="#fff" stroke="#e8590c" strokeWidth={1.5 * s}
                 style={{ cursor: 'move' }}
@@ -383,6 +440,13 @@ export default function Canvas({ state, dispatch, view, setView, tool, setTool, 
               </text>
             </g>
           )}
+
+          {/* Erase preview */}
+          {box && (() => {
+            const r = rectOf(box)
+            return <rect x={r.x} y={r.y} width={r.w} height={r.h} fill="rgba(255,255,255,0.7)"
+              stroke="#e8590c" strokeWidth={1.5 * s} strokeDasharray={`${5 * s} ${4 * s}`} style={{ pointerEvents: 'none' }} />
+          })()}
 
           {/* Calibration line */}
           {cal && (

@@ -61,6 +61,7 @@ export function Properties({ state, dispatch }: { state: State; dispatch: (a: Ac
   const wall = doc.walls.find((w) => w.id === id)
   const item = doc.items.find((i) => i.id === id)
   const note = doc.notes.find((n) => n.id === id)
+  const erase = doc.erasures.find((e) => e.id === id)
 
   return (
     <aside className="props">
@@ -86,6 +87,17 @@ export function Properties({ state, dispatch }: { state: State; dispatch: (a: Ac
           </select>
         </label>
       </section>
+
+      {erase && (
+        <section>
+          <h3>Erased area</h3>
+          <NumField label="X" value={erase.x} onChange={(n) => dispatch({ t: 'patchErase', id: erase.id, patch: { x: n } })} />
+          <NumField label="Y" value={erase.y} onChange={(n) => dispatch({ t: 'patchErase', id: erase.id, patch: { y: n } })} />
+          <NumField label="Width" value={erase.w} onChange={(n) => dispatch({ t: 'patchErase', id: erase.id, patch: { w: Math.max(1, n) } })} />
+          <NumField label="Height" value={erase.h} onChange={(n) => dispatch({ t: 'patchErase', id: erase.id, patch: { h: Math.max(1, n) } })} />
+          <button className="danger" onClick={() => dispatch({ t: 'delete', ids: [erase.id] })}>Restore this area</button>
+        </section>
+      )}
 
       {!id && <section><h3>Selection</h3><p className="muted">Nothing selected.</p></section>}
 

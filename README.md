@@ -42,6 +42,9 @@ rotation as editable millimetre fields. The mouse is never the only way to get a
 - **Objects** — ~37 presets at real-world sizes: doors, windows, stairs, columns, kitchen blocks and
   islands, appliances, bath, shower, toilet, sink, couches, tables, chairs, beds, wardrobes,
   cupboards, desks. Move, resize (from the object's own axes, even when rotated) and rotate.
+- **Erase** — drag a box over anything printed on the original plan you want rid of: old furniture,
+  a wall you are knocking through, the estate agent's logo. Your own walls and objects stay on top of
+  it, and it is undoable and reversible — select the patch and restore the area.
 - **Sticky notes** — coloured notes with an optional leader line pointing at part of the plan.
 - **Export** — PNG, or a **true-scale vector PDF**: at 1:50 a 3600 mm wall measures 72 mm on paper.
   Notes are preserved as selectable text. Both exports carry a scale bar.
@@ -51,7 +54,7 @@ rotation as editable millimetre fields. The mouse is never the only way to get a
 
 | Key | Action |
 |---|---|
-| `V` / `W` / `N` | select / wall / note tool |
+| `V` / `W` / `N` / `E` | select / wall / note / erase tool |
 | `Alt` (held) | disable snapping |
 | `Shift` (resizing) | keep aspect ratio |
 | `Shift` (rotating) | snap to 15° |
