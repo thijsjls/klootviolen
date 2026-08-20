@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  angleOf,
   calibrate,
   dist,
   mmToScreen,
   parseLength,
+  pointAtAngle,
   pointAtLength,
   screenToMm,
   snap,
@@ -139,6 +141,30 @@ describe('typed length entry', () => {
   it('does not move the point when the direction is undefined', () => {
     const origin = { x: 10, y: 10 }
     expect(pointAtLength(origin, origin, 3600)).toEqual(origin)
+  })
+})
+
+describe('typed angle entry', () => {
+  const origin = { x: 250, y: 250 }
+
+  it('places the point at exactly the requested angle and length', () => {
+    const p = pointAtAngle(origin, 3600, 37)
+    expect(dist(origin, p)).toBeCloseTo(3600, 9)
+    expect((angleOf(origin, p) * 180) / Math.PI).toBeCloseTo(37, 9)
+  })
+
+  it('uses the same screen convention as angleOf: 0 is +x, 90 is down', () => {
+    expect(pointAtAngle(origin, 100, 0).x).toBeCloseTo(350, 9)
+    expect(pointAtAngle(origin, 100, 90).y).toBeCloseTo(350, 9)
+  })
+
+  it('retyping a wall angle pivots about its first endpoint and keeps its length', () => {
+    const a = { x: 1000, y: 1000 }
+    const b = { x: 4600, y: 1000 }
+    const rotated = pointAtAngle(a, dist(a, b), 90)
+    expect(dist(a, rotated)).toBeCloseTo(3600, 9)
+    expect(rotated.x).toBeCloseTo(1000, 9)
+    expect(rotated.y).toBeCloseTo(4600, 9)
   })
 })
 

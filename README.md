@@ -30,15 +30,17 @@ That is what makes the numbers trustworthy: there is nowhere for a scale factor 
 `3600`). That fixes `mmPerPx` for the document. Recalibrating later rescales the geometry you have
 already drawn, so a corrected scale never silently invalidates your work.
 
-**Exact entry everywhere.** While drawing a wall you can type its length and press Enter to commit
-that segment at exactly that length. Every selected object exposes its X / Y / width / depth /
-rotation as editable millimetre fields. The mouse is never the only way to get a precise number in.
+**Exact entry everywhere.** While drawing a wall you can type its length, its angle, or both, and
+press Enter to commit that segment at exactly those values — leave one blank and the pointer supplies
+it. A selected wall exposes its length, angle and thickness; a selected object its X / Y / width /
+depth / rotation. The mouse is never the only way to get a precise number in.
 
 ## What you can do
 
 - **Walls** — chained click-to-draw with snapping to existing endpoints, ortho + 45°, and a grid.
   Hold `Alt` to disable snapping. Drag an endpoint to extend or reshape; walls sharing a corner move
-  together.
+  together. Length and angle are both typeable, while drawing and afterwards — retyping an angle
+  pivots the wall about its first endpoint, exactly as retyping a length extends from it.
 - **Objects** — ~37 presets at real-world sizes: doors, windows, stairs, columns, kitchen blocks and
   islands, appliances, bath, shower, toilet, sink, couches, tables, chairs, beds, wardrobes,
   cupboards, desks. Move, resize (from the object's own axes, even when rotated) and rotate.

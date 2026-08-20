@@ -60,6 +60,12 @@ export const pointAtLength = (origin: Pt, towards: Pt, length: number): Pt => {
   return { x: origin.x + ((towards.x - origin.x) / d) * length, y: origin.y + ((towards.y - origin.y) / d) * length }
 }
 
+/** Point at exactly `length` mm and `deg` degrees from `origin`, same convention as angleOf. */
+export const pointAtAngle = (origin: Pt, length: number, deg: number): Pt => {
+  const r = (deg * Math.PI) / 180
+  return { x: origin.x + Math.cos(r) * length, y: origin.y + Math.sin(r) * length }
+}
+
 /** Constrain `p` so the direction from `origin` is a multiple of `stepDeg`. Length is preserved. */
 export const snapAngle = (origin: Pt, p: Pt, stepDeg: number): Pt => {
   const step = (stepDeg * Math.PI) / 180

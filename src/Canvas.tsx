@@ -3,6 +3,7 @@ import {
   angleOf,
   dist,
   formatMm,
+  pointAtAngle,
   pointAtLength,
   rotate,
   screenToMm,
@@ -80,6 +81,7 @@ export default function Canvas({ state, dispatch, view, setView, tool, setTool, 
   const [box, setBox] = useState<{ a: Pt; b: Pt } | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [lengthInput, setLengthInput] = useState('')
+  const [angleInput, setAngleInput] = useState('')
   const drag = useRef<Drag | null>(null)
   const alt = useRef(false)
 
@@ -163,6 +165,7 @@ export default function Canvas({ state, dispatch, view, setView, tool, setTool, 
           if (dist(pending, p) > 1) dispatch({ t: 'addWall', wall: { id: uid(), a: pending, b: p, thickness: DEFAULT_WALL_MM } })
           setPending(p)
           setLengthInput('')
+          setAngleInput('')
         }
         return
 
@@ -313,13 +316,28 @@ export default function Canvas({ state, dispatch, view, setView, tool, setTool, 
   const selItem = doc.items.find((i) => i.id === one)
   const editNote = doc.notes.find((n) => n.id === editing)
 
-  const commitLength = () => {
-    const mm = parseFloat(lengthInput)
-    if (!pending || !cursor || !isFinite(mm) || mm <= 0) return
-    const b = pointAtLength(pending, cursor, mm)
+  /**
+   * Commit the pending segment from what you typed. Either field may be left
+   * blank, in which case the pointer supplies that half — so you can nail the
+   * angle and eyeball the length, or the other way round.
+   */
+  const commitSegment = () => {
+    if (!pending || !cursor) return
+    const typedLen = parseFloat(lengthInput)
+    const typedDeg = parseFloat(angleInput)
+    const len = isFinite(typedLen) && typedLen > 0 ? typedLen : dist(pending, cursor)
+    const deg = isFinite(typedDeg) ? typedDeg : (angleOf(pending, cursor) * 180) / Math.PI
+    if (len <= 0) return
+    const b = pointAtAngle(pending, len, deg)
     dispatch({ t: 'addWall', wall: { id: uid(), a: pending, b, thickness: DEFAULT_WALL_MM } })
     setPending(b)
     setLengthInput('')
+    setAngleInput('')
+  }
+
+  const onEntryKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') commitSegment()
+    if (e.key === 'Escape') setPending(null)
   }
 
   return (
@@ -476,12 +494,18 @@ export default function Canvas({ state, dispatch, view, setView, tool, setTool, 
             value={lengthInput}
             placeholder={cursor ? String(Math.round(dist(pending, cursor))) : ''}
             onChange={(e) => setLengthInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') commitLength()
-              if (e.key === 'Escape') setPending(null)
-            }}
+            onKeyDown={onEntryKey}
           />
           <span>mm</span>
+          <label>Angle</label>
+          <input
+            className="deg"
+            value={angleInput}
+            placeholder={cursor ? String(Math.round((angleOf(pending, cursor) * 180) / Math.PI)) : ''}
+            onChange={(e) => setAngleInput(e.target.value)}
+            onKeyDown={onEntryKey}
+          />
+          <span>°</span>
           <button onClick={() => setPending(null)}>Done</button>
         </div>
       )}

@@ -78,7 +78,8 @@ kbd {
   background: #fff; border: 1px solid var(--accent); border-radius: 7px;
   padding: 6px 10px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
 }
-.length-entry input { width: 90px; }
+.length-entry input { width: 84px; }
+.length-entry input.deg { width: 56px; }
 
 .note-edit {
   position: absolute; left: 50%; top: 18px; transform: translateX(-50%);

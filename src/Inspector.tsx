@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { angleOf, dist, formatMm, pointAtLength } from './geometry'
+import { angleOf, dist, formatMm, pointAtAngle, pointAtLength } from './geometry'
 import {
   CATALOG,
   CATEGORIES,
@@ -110,7 +110,10 @@ export function Properties({ state, dispatch }: { state: State; dispatch: (a: Ac
           <NumField label="Thickness" value={wall.thickness} onChange={(n) =>
             dispatch({ t: 'patchWall', id: wall.id, patch: { thickness: Math.max(10, n) } })
           } />
-          <p className="muted">Angle {Math.round((angleOf(wall.a, wall.b) * 180) / Math.PI)}°</p>
+          {/* Pivots about the wall's first endpoint, exactly as Length extends from it. */}
+          <NumField label="Angle" suffix="°" value={(angleOf(wall.a, wall.b) * 180) / Math.PI} onChange={(n) =>
+            dispatch({ t: 'patchWall', id: wall.id, patch: { b: pointAtAngle(wall.a, dist(wall.a, wall.b), n) } })
+          } />
           <button className="danger" onClick={() => dispatch({ t: 'delete', ids: [wall.id] })}>Delete wall</button>
         </section>
       )}

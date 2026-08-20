@@ -175,7 +175,7 @@ export default function App() {
 
       <footer>
         {tool.t === 'calibrate' && 'Drag a line across a dimension you know, then type its real length.'}
-        {tool.t === 'wall' && 'Click to place corners. Type an exact length and press Enter. Alt disables snapping, Esc ends the chain.'}
+        {tool.t === 'wall' && 'Click to place corners. Type an exact length and/or angle, then Enter. Alt disables snapping, Esc ends the chain.'}
         {tool.t === 'place' && 'Click to place the object.'}
         {tool.t === 'note' && 'Click to drop a sticky note.'}
         {tool.t === 'erase' && 'Drag a box over anything on the original plan you want gone. Your own walls and objects stay visible.'}
