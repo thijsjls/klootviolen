@@ -1,21 +1,19 @@
-# Floorplanner
+# klootviolen
 
-Turn a floor plan image into editable, correctly-measured objects in your browser.
+> Dan ga je thuis effe lekker met dat plattegrondje zitten klootviolen.
 
-Drop in a plan (estate agent export, scan, screenshot), tell it how long one known dimension is, and
-from then on every wall you trace and every object you place is stored in **real millimetres**. Move a
-wall, check whether the couch fits, annotate it for a contractor, export a true-scale PDF.
+Faffing about with a floor plan, except the measurements are real.
 
-No backend, no account, no upload — everything stays in your browser.
+Drop in an image of a plan — estate agent export, scan, photo of a paper one — tell it how long one
+dimension you already know is, and from then on every wall you trace and every object you drop is
+stored in **real millimetres**. Shove a wall around, check whether the couch actually fits, stick
+notes on it for the contractor, export a true-scale PDF.
+
+No backend, no account, nothing uploaded — it all stays in your browser.
 
 **[Open the app →](https://thijsjls.github.io/klootviolen/)**
 
 ---
-
-## Why
-
-Existing options are either full CAD (too heavy, wrong input format) or drawing toys with no notion of
-scale, where every measurement is a lie. Floorplanner does one thing: keeps the plan honest about size.
 
 ## Measurement model
 

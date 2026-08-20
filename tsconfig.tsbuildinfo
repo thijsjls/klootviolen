@@ -1,1 +1,0 @@
-{"root":["./src/app.tsx","./src/canvas.tsx","./src/inspector.tsx","./src/export.ts","./src/geometry.test.ts","./src/geometry.ts","./src/main.tsx","./src/model.ts","./src/persist.ts","./vite.config.ts"],"version":"5.9.3"}
